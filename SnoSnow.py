@@ -169,11 +169,43 @@ class Enemy(Entity):
         self.position.x = random.randrange(0, 720)
         self.position.y = 0
 
-        self.initialiser((102, 107, 102),"Data/Sounds/RockHit.wav")
+        self.color = (255, 102, 0)
+        self.radius = random.randrange(10, 30)
+
+        # Spikes attributes
+        self.num_spikes = random.randint(5, 8)  # Number of spikes
+        self.spike_length = random.randint(10, 20)  # Length of spikes
 
         self.tag = "enemy"
 
-        self.radius = random.randrange(10, 30)
+    def draw(self, screen):
+        # Draw the main circle (enemy base)
+        pygame.draw.circle(screen, self.color, (int(self.position.x), int(self.position.y)), self.radius)
+
+        # Draw spikes around the circle
+        center_x = int(self.position.x)
+        center_y = int(self.position.y)
+        for i in range(self.num_spikes):
+            # Calculate angle for each spike
+            angle = (360 / self.num_spikes) * i
+            spike_x = center_x + (self.radius + self.spike_length) * math.cos(math.radians(angle))
+            spike_y = center_y + (self.radius + self.spike_length) * math.sin(math.radians(angle))
+
+            # Draw the spike as a triangle
+            tip = (spike_x, spike_y)
+            left_base = (
+                center_x + self.radius * math.cos(math.radians(angle - 10)),
+                center_y + self.radius * math.sin(math.radians(angle - 10))
+            )
+            right_base = (
+                center_x + self.radius * math.cos(math.radians(angle + 10)),
+                center_y + self.radius * math.sin(math.radians(angle + 10))
+            )
+            pygame.draw.polygon(screen, self.color, [tip, left_base, right_base])
+
+    def update(self):
+        # Move the enemy downwards
+        self.position.y += self.speed
 
 class Snowball(Entity):
     def __init__(self):
@@ -312,7 +344,7 @@ class Main():
     def setup_pygame(self, title, width, height):
         screen = pygame.display.set_mode((width, height))
         pygame.display.set_caption(title)
-        favicon = pygame.image.load("Data/Textures/Favicon.png").convert_alpha()
+        favicon = pygame.image.load("Data/Textures/Favicon.jpg").convert_alpha()
         pygame.display.set_icon(favicon)
         pygame.init()
         return screen
@@ -354,7 +386,7 @@ class Main():
 
         #Constant Sprites
         foreground = pygame.sprite.Sprite()
-        foreground.image = pygame.image.load("Data/Textures/Foreground.png").convert_alpha()
+        foreground.image = pygame.image.load("Data/Textures/Test.png").convert_alpha()
         foreground.rect = foreground.image.get_rect()
         foreground.rect.topleft = 0, HEIGHT - 480
         foreground.image = pygame.transform.scale(foreground.image, (720, 480))
@@ -410,14 +442,17 @@ class Main():
     def menu(self, screen, font, WIDTH, HEIGHT):
         global game_state
 
-        COLOR = (224, 190, 108)
-
+        COLOR = (173, 216, 230)
+        font_for_devs_name = pygame.font.Font(None, 20)
+        font_for_header = pygame.font.Font("Data/Fonts/OhSnowdemo-WyXaE.ttf", 80)
+        font_for_click_press_to_start = pygame.font.Font(None, 30)
+        font_score_txt = pygame.font.Font(None, 35)
         sound = pygame.mixer.Sound("Data/Sounds/Start.wav")
-        play_text = font.render("PLAY", True, (255,255,255))
+        play_text = font_for_header.render("Snowfall", True, (255,255,255))
         play_text_y_offset = 0
-
-        score_text = font.render("HIGH SCORE: " + str(int(max_score)), True, (255,255,255))
-
+        score_text = font_score_txt.render("HIGH SCORE: " + str(int(max_score)), True, (255,255,255))
+        extra_text_1 = font_for_devs_name.render("Made by Bete, Gopez, & Buclares", True, (255, 255, 255))
+        extra_text_2 = font_for_click_press_to_start.render("Click the Screen to Start!", True, (255, 255, 255))
         tutorial_text = font.render("You're Melting!", True, (255,255,255))
         tutorial_text_2 = font.render("Collect Snow And Avoid Moving Rocks!", True, (255,255,255))
 
@@ -425,8 +460,10 @@ class Main():
         while game_state == 0:
             screen.fill(COLOR)
             screen.blit(play_text, (WIDTH/2 - play_text.get_width() / 2, HEIGHT/2 - play_text.get_height() / 2 + play_text_y_offset))
-            screen.blit(score_text, (WIDTH/2 - score_text.get_width() / 2, HEIGHT/2 - score_text.get_height() / 2 + 150))
+            screen.blit(score_text, (WIDTH - score_text.get_width() - 20, 20))
             play_text_y_offset = math.sin(time.time() * 5) * 5 - 25
+            screen.blit(extra_text_1, (WIDTH / 2 - extra_text_1.get_width() / 2, HEIGHT - 50))
+            screen.blit(extra_text_2, (WIDTH / 2 - extra_text_2.get_width() / 2, HEIGHT - 200))
             for event in pygame.event.get():
                 if(event.type == pygame.QUIT):
                     game_state = 2
@@ -446,7 +483,7 @@ class Main():
         while game_state != 2:
             WIDTH, HEIGHT = 720, 480
 
-            screen = self.setup_pygame("Sno Snow", WIDTH, HEIGHT)
+            screen = self.setup_pygame("Snowfall", WIDTH, HEIGHT)
             font = pygame.font.Font("Data/Fonts/Inter.ttf", 32)
 
             if(game_state == 0):
